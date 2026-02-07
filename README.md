@@ -7,7 +7,7 @@ A tiny web app that lets anyone:
 
 ## Tech
 - Next.js (App Router) + Tailwind
-- Email sending via **Resend** (recommended for Vercel)
+- Email via **Resend** (Vercel-friendly)
 - Optional anti-abuse:
   - Cloudflare Turnstile CAPTCHA
   - Rate limiting (Upstash Redis)
@@ -45,7 +45,7 @@ UPSTASH_REDIS_REST_TOKEN=
 ## Deploy (Vercel)
 1) Push to GitHub
 2) Import the repo in Vercel
-3) Add the env vars in Vercel Project Settings → Environment Variables
+3) Add env vars in Vercel Project Settings → Environment Variables
 4) Deploy
 
 ## Important notes

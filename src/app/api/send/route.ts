@@ -23,7 +23,6 @@ function isKindleEmail(email: string): boolean {
 }
 
 function getClientIp(req: Request): string | undefined {
-  // Vercel / common proxy header
   const xff = req.headers.get("x-forwarded-for");
   if (!xff) return undefined;
   return xff.split(",")[0]?.trim();
@@ -89,8 +88,7 @@ export async function POST(req: Request) {
     }
 
     const name = (file.name || "document.txt").trim();
-    const lower = name.toLowerCase();
-    if (!lower.endsWith(".txt")) {
+    if (!name.toLowerCase().endsWith(".txt")) {
       return NextResponse.json({ ok: false, error: "Only .txt is supported for now." }, { status: 400 });
     }
 
