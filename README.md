@@ -1,44 +1,49 @@
 # txttokindle
 
-A simple web app that lets anyone:
-1) drag & drop a `.txt` file (a book)
+A tiny web app that lets anyone:
+1) drag & drop a `.txt` file
 2) enter their **Kindle “Send to Kindle” email**
-3) click **Send** → the file is emailed for delivery to their Kindle
+3) click **Send** → Amazon delivers it to their Kindle
 
-## How it works (MVP)
-- Frontend: Next.js (App Router) + Tailwind
-- Backend: Next.js Route Handler that accepts upload + kindle email
-- Delivery: sends an email with the TXT as an attachment using SMTP (via Nodemailer)
-
-> Kindle supports receiving `.txt` by email (Amazon does the conversion/delivery).
+## Tech
+- Next.js (App Router) + Tailwind
+- Email sending via **Resend** (recommended for Vercel)
 
 ## Local dev
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 Open: http://localhost:3000
 
 ## Environment variables
+
 Create `.env.local`:
 
 ```bash
-# SMTP settings (use a transactional email provider)
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM="TxtToKindle <no-reply@yourdomain.com>"
+# Resend
+RESEND_API_KEY=
+RESEND_FROM="TxtToKindle <send@yourdomain.com>"
 
-# Basic abuse protection
+# Safety
+REQUIRE_KINDLE_DOMAIN=true
 MAX_UPLOAD_BYTES=10485760
 ```
 
-## Deploy
-Any Node hosting works (Vercel/Render/Fly/etc). If you use Vercel, you’ll need an SMTP provider that works from serverless.
+## Deploy (Vercel)
+1) Push to GitHub
+2) Import the repo in Vercel
+3) Add the env vars in Vercel Project Settings → Environment Variables
+4) Deploy
 
-## Notes / Safety
-- Add rate limiting + captcha before public launch.
-- Consider allowlisting kindle domains (`kindle.com`, `free.kindle.com`) and validating emails.
+## Important notes
+- Users must allow your sender address/domain in Amazon:
+  **Approved Personal Document E-mail List**
+- Before making this public, add:
+  - CAPTCHA (Cloudflare Turnstile)
+  - Rate limiting
+  - Terms/Privacy
+
