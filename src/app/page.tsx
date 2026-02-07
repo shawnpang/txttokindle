@@ -2,11 +2,33 @@
 
 import { useMemo, useState } from "react";
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        element: HTMLElement,
+        options: {
+          sitekey: string;
+          callback: (token: string) => void;
+          "error-callback"?: () => void;
+          "expired-callback"?: () => void;
+        }
+      ) => string;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [kindleEmail, setKindleEmail] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [busy, setBusy] = useState(false);
+
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [turnstileReady, setTurnstileReady] = useState(false);
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const fileLabel = useMemo(() => {
     if (!file) return "Drag a .txt file here, or click to choose";
@@ -17,12 +39,14 @@ export default function Home() {
     setStatus("");
     if (!file) return setStatus("Please choose a .txt file.");
     if (!kindleEmail.trim()) return setStatus("Please enter your Kindle email.");
+    if (siteKey && !turnstileToken) return setStatus("Please complete the CAPTCHA.");
 
     setBusy(true);
     try {
       const form = new FormData();
       form.append("file", file);
       form.append("kindleEmail", kindleEmail.trim());
+      if (turnstileToken) form.append("turnstileToken", turnstileToken);
 
       const res = await fetch("/api/send", {
         method: "POST",
@@ -34,6 +58,8 @@ export default function Home() {
       } else {
         setStatus("Sent! Check your Kindle in a few minutes.");
         setFile(null);
+        setTurnstileToken("");
+        if (window.turnstile) window.turnstile.reset();
       }
     } catch (e: unknown) {
       setStatus(e instanceof Error ? e.message : "Unexpected error.");
@@ -46,9 +72,7 @@ export default function Home() {
     <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-xl rounded-xl border p-6 shadow-sm">
         <h1 className="text-2xl font-semibold">TxtToKindle</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Upload a .txt file and send it to your Kindle email.
-        </p>
+        <p className="mt-2 text-sm text-gray-600">Upload a .txt file and send it to your Kindle email.</p>
 
         <label
           className="mt-6 block rounded-lg border-2 border-dashed p-6 text-center cursor-pointer hover:bg-gray-50"
@@ -82,6 +106,40 @@ export default function Home() {
           </p>
         </div>
 
+        {siteKey && (
+          <div className="mt-5">
+            <script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+              async
+              defer
+              onLoad={() => setTurnstileReady(true)}
+            />
+
+            <div
+              className="min-h-[65px]"
+              ref={(el) => {
+                if (!el) return;
+                if (!turnstileReady) return;
+                if (!window.turnstile) return;
+                // Avoid re-rendering multiple widgets
+                if (el.dataset.widgetId) return;
+
+                const widgetId = window.turnstile.render(el, {
+                  sitekey: siteKey,
+                  callback: (token) => setTurnstileToken(token),
+                  "expired-callback": () => setTurnstileToken(""),
+                  "error-callback": () => setTurnstileToken(""),
+                });
+                el.dataset.widgetId = widgetId;
+              }}
+            />
+
+            <p className="mt-2 text-xs text-gray-500">
+              CAPTCHA is enabled to prevent abuse.
+            </p>
+          </div>
+        )}
+
         <button
           className="mt-5 w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           disabled={busy}
@@ -90,9 +148,7 @@ export default function Home() {
           {busy ? "Sending…" : "Send to Kindle"}
         </button>
 
-        {status && (
-          <div className="mt-4 rounded-md bg-gray-100 px-3 py-2 text-sm">{status}</div>
-        )}
+        {status && <div className="mt-4 rounded-md bg-gray-100 px-3 py-2 text-sm">{status}</div>}
 
         <div className="mt-6 text-xs text-gray-500">
           Note: your Kindle must allow the sender address (Amazon “Approved Personal Document E-mail List”).
