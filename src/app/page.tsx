@@ -23,6 +23,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [kindleEmail, setKindleEmail] = useState<string>("");
   const [status, setStatus] = useState<string>("");
+  const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const [turnstileToken, setTurnstileToken] = useState<string>("");
@@ -39,6 +40,7 @@ export default function Home() {
     setStatus("");
     if (!file) return setStatus("Please choose a .txt file.");
     if (!kindleEmail.trim()) return setStatus("Please enter your Kindle email.");
+    if (!accepted) return setStatus("Please accept the terms.");
     if (siteKey && !turnstileToken) return setStatus("Please complete the CAPTCHA.");
 
     setBusy(true);
@@ -140,6 +142,7 @@ export default function Home() {
           </div>
         )}
 
+<div className="mt-5 flex items-start gap-2">          <input            id="accept"            type="checkbox"            className="mt-1"            checked={accepted}            onChange={(e) => setAccepted(e.target.checked)}          />          <label htmlFor="accept" className="text-xs text-gray-600">            I confirm I have the rights to send this file and agree to the            <a className="underline ml-1" href="/terms" target="_blank" rel="noreferrer">Terms</a>            and            <a className="underline ml-1" href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.          </label>        </div>
         <button
           className="mt-5 w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           disabled={busy}
